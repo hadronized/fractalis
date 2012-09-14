@@ -67,8 +67,8 @@ void FR_put_pixel(SDL_Surface *ps, int x, int y, Uint32 pixel) {
   }
 }
 
-Uint32 FR_colorify(SDL_PixelFormat *f, int i, int max) {
-  int m = i % (256*6);
+Uint32 FR_colorify(SDL_PixelFormat *f, int i, int cseed) {
+  int m = (i+cseed) % (256*6);
   int amp = 256;
 
   if (i == -1)
@@ -102,14 +102,14 @@ int FR_mandelbrot(double x, float y, int iter, float offx, float offy, float zoo
   return i;
 }
 
-void FR_draw(SDL_Surface *ps, int iter, double offx, float offy, float zoom) {
+void FR_draw(SDL_Surface *ps, int iter, double offx, float offy, float zoom, int cseed) {
   int i, j;
 
   SDL_LockSurface(ps);
   MT_log(LOG_DEBUG, "eval mandelbrot... (%F:%F:%d:%F)", offx, offy, iter, zoom);
   for (i = 0; i < H; ++i) {
     for (j = 0; j < W; ++j)
-      FR_put_pixel(ps, j, i, FR_colorify(ps->format, FR_mandelbrot(1.*j/W, 1.*i/H, iter, offx, offy, zoom), iter));
+      FR_put_pixel(ps, j, i, FR_colorify(ps->format, FR_mandelbrot(1.*j/W, 1.*i/H, iter, offx, offy, zoom), cseed));
   }
   MT_log(LOG_DEBUG, "done!");
   SDL_UnlockSurface(ps);
@@ -163,6 +163,7 @@ int FR_main(SDL_Surface *ps) {
   double mx, my;
   double zoom;
   int zf;
+  int cseed;
 
   SDL_ShowCursor(SDL_DISABLE);
 
@@ -175,8 +176,9 @@ int FR_main(SDL_Surface *ps) {
   offy = 0.;
   zoom = 1.;
   zf = 2;
+  cseed = 0;
 
-  FR_draw(pmandel, iterations, offx, offy, zoom);
+  FR_draw(pmandel, iterations, offx, offy, zoom, cseed);
   while (ran) {
     SDL_BlitSurface(pmandel, NULL, ps, NULL);
     if (showZoom)
@@ -202,7 +204,7 @@ int FR_main(SDL_Surface *ps) {
               offx += mx;
               offy += my;
               zoom *= zf;
-              FR_draw(pmandel, iterations, offx, offy, zoom);
+              FR_draw(pmandel, iterations, offx, offy, zoom, cseed);
               break;
 
             default :;
@@ -219,6 +221,10 @@ int FR_main(SDL_Surface *ps) {
               showZoom = !showZoom;
               break;
 
+            case SDLK_c :
+              cseed += 256;
+              FR_draw(pmandel, iterations, offx, offy, zoom, cseed);
+              break;
             
             default :;
           }
@@ -228,12 +234,12 @@ int FR_main(SDL_Surface *ps) {
           switch (event.key.keysym.sym) {
             case SDLK_i :
               iterations += 100;
-              FR_draw(pmandel, iterations, offx, offy, zoom);
+              FR_draw(pmandel, iterations, offx, offy, zoom, cseed);
               break;
 
             case SDLK_z :
               zoom /= zf;
-              FR_draw(pmandel, iterations, offx, offy, zoom);
+              FR_draw(pmandel, iterations, offx, offy, zoom, cseed);
               break;
 
             case SDLK_PLUS :
@@ -243,7 +249,7 @@ int FR_main(SDL_Surface *ps) {
             case SDLK_MINUS :
               --zf;
               break;
-
+ 
             default :;
           }
           break;
