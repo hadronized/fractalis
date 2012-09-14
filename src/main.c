@@ -12,7 +12,7 @@ SDL_Surface * FR_init(int argc, char **argv) {
   if (!ps)
     MT_log(LOG_EXT_ERROR, "unable to open a window");
   MT_log(LOG_DEBUG, "initialized");
-  
+
   return ps;
 }
 
@@ -78,29 +78,29 @@ Uint32 FR_colorify(SDL_PixelFormat *f, int i) {
     return SDL_MapRGB(f, 0, 255-i, 255);
   else if (m < 5*amp)
     return SDL_MapRGB(f, i, 0, 255);
-  else if (m < 6*amp)
-    return SDL_MapRGB(f, 255, 0, 255-i);
+  return SDL_MapRGB(f, 255, 0, 255-i);
 }
 
-int FR_mandelbrot(float x, float y, int iter) {
+int FR_mandelbrot(float x, float y, int iter, float offx, float offy, float zoom) {
   int i;
   FR_Mandelbrot_Complex xy = { x, y };
 
-  FR_Mandelbrot_Complex_uv2mandelbrot(&xy);
+  FR_Mandelbrot_uv2mandelbrot(&xy.r, &xy.i);
+  xy.r = xy.r/zoom + offx;
+  xy.i = xy.i/zoom + offy;
   i = FR_Mandelbrot_eval(&xy, iter);
 
   return i;
 }
 
-void FR_draw(SDL_Surface *ps, int iter) {
+void FR_draw(SDL_Surface *ps, int iter, float offx, float offy, float zoom) {
   int i, j;
 
   SDL_LockSurface(ps);
   MT_log(LOG_DEBUG, "eval mandelbrot... (iteration %d)", iter);
   for (i = 0; i < 600; ++i) {
     for (j = 0; j < 800; ++j)
-      FR_put_pixel(ps, j, i, FR_colorify(ps->format, FR_mandelbrot(1.f*j/800, 1.f*i/600, iter)));
-  }
+      FR_put_pixel(ps, j, i, FR_colorify(ps->format, FR_mandelbrot(1.f*j/800, 1.f*i/600, iter, offx, offy, zoom))); }
   MT_log(LOG_DEBUG, "done!");
   SDL_UnlockSurface(ps);
 }
@@ -109,16 +109,12 @@ void FR_zoom_area_draw(SDL_Surface *ps, int w, int h, float zoom) {
   SDL_Surface *framebuffer = 0;
   SDL_Rect box;
   int mx, my;
-  int i;
-  float xw, yh;
 
   SDL_GetMouseState(&mx, &my);
   box.w = w / zoom;
   box.h = h / zoom;
   box.x = mx-box.w/2;
   box.y = my-box.h/2;
-  xw = box.x+box.w;
-  yh = box.y+box.h;
 
   if (box.x < 0.f) {
     box.w += box.x;
@@ -153,6 +149,9 @@ int FR_main(SDL_Surface *ps) {
   int iterations;
   SDL_Event event;
   SDL_Surface *pmandel;
+  float offx, offy;
+  float mx, my;
+  float zoom;
 
   SDL_ShowCursor(SDL_DISABLE);
 
@@ -161,8 +160,11 @@ int FR_main(SDL_Surface *ps) {
   ran = true;
   showZoom = true;
   iterations = 10;
+  offx = 0.f;
+  offy = 0.f;
+  zoom = 1.f/3;
 
-  FR_draw(pmandel, iterations);
+  FR_draw(pmandel, iterations, offx, offy, zoom);
   while (ran) {
     SDL_BlitSurface(pmandel, NULL, ps, NULL);
     if (showZoom)
@@ -172,6 +174,27 @@ int FR_main(SDL_Surface *ps) {
       switch (event.type) {
         case SDL_QUIT :
           ran = false;
+          break;
+
+        case SDL_MOUSEBUTTONUP :
+          switch (event.button.button) {
+            case SDL_BUTTON_LEFT :
+              mx = event.motion.x;
+              my = event.motion.y;
+
+              mx /= 800;
+              my /= 600;
+              FR_Mandelbrot_uv2mandelbrot(&mx, &my);
+              mx /= zoom;
+              my /= zoom;
+              offx += mx;
+              offy += my;
+              zoom *= 2;
+              FR_draw(pmandel, iterations, offx, offy, zoom);
+              break;
+
+            default :;
+          }
           break;
 
         case SDL_KEYUP :
@@ -185,8 +208,13 @@ int FR_main(SDL_Surface *ps) {
               break;
 
             case SDLK_i :
-              iterations += 10; 
-              FR_draw(pmandel, iterations);
+              iterations += 100;
+              FR_draw(pmandel, iterations, offx, offy, zoom);
+              break;
+
+            case SDLK_z :
+              zoom *= 2.f;
+              FR_draw(pmandel, iterations, offx, offy, zoom);
               break;
 
             default :;
@@ -203,7 +231,7 @@ int FR_main(SDL_Surface *ps) {
 
 int main(int argc, char **argv) {
   SDL_Surface *ps;
- 
+
   ps = FR_init(argc, argv);
   FR_main(ps);
   FR_quit();

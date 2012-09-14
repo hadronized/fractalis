@@ -1,9 +1,9 @@
 #include <math.h>
 #include "mandelbrot.h"
 
-void FR_Mandelbrot_Complex_uv2mandelbrot(FR_Mandelbrot_Complex *pp) {
-  pp->r = pp->r*3 - 2;
-  pp->i = -(pp->i*2 - 1);
+void FR_Mandelbrot_uv2mandelbrot(float *x, float *y) {
+  *x = (*x)*2 - 1.f;
+  *y = 1.f - (*y)*2;
 }
 
 bool FR_Mandelbrot_Complex_div(FR_Mandelbrot_Complex *pp) {
@@ -26,7 +26,6 @@ int FR_Mandelbrot_eval(FR_Mandelbrot_Complex const *xy, int maxi) {
   FR_Mandelbrot_Complex z = { 0.f, 0.f };
 
   iter = 0;
-  //FR_Mandelbrot_next(&z, xy);
   while (iter <= maxi) {
     if (FR_Mandelbrot_Complex_div(&z))
       return iter;
