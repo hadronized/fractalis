@@ -1,9 +1,11 @@
 #include <SDL/SDL.h>
 #include <meta/common.h>
 #include "mandelbrot.h"
+#include <math.h>
 
 #define W 1280 
 #define H 800 
+#define F false
 #define R (1.*(W)/(H))
 
 SDL_Surface * FR_init(int argc, char **argv) {
@@ -12,7 +14,7 @@ SDL_Surface * FR_init(int argc, char **argv) {
   MT_log(LOG_DEBUG, "initializing");
   mt_logflag = LOG_ALL;
   SDL_Init(SDL_INIT_VIDEO);
-  ps = SDL_SetVideoMode(W, H, 32, SDL_HWSURFACE | SDL_DOUBLEBUF | SDL_FULLSCREEN);
+  ps = SDL_SetVideoMode(W, H, 32, SDL_HWSURFACE | SDL_DOUBLEBUF | (F ? SDL_FULLSCREEN : 0));
   if (!ps)
     MT_log(LOG_EXT_ERROR, "unable to open a window");
   MT_log(LOG_DEBUG, "initialized");
@@ -68,13 +70,13 @@ void FR_put_pixel(SDL_Surface *ps, int x, int y, Uint32 pixel) {
 }
 
 Uint32 FR_colorify(SDL_PixelFormat *f, int i, int cseed) {
-  int m = (i+cseed) % (256*6);
-  int amp = 256;
+  int m = (i+cseed) % (256);
+  int amp = 256.f/6;
 
   if (i == -1)
     return SDL_MapRGB(f, 0, 0, 0);
 
-  i = i % 256;
+  i = (i % amp)*6;
 
   if (m < amp)
     return SDL_MapRGB(f, 255, i, 0);
@@ -89,7 +91,7 @@ Uint32 FR_colorify(SDL_PixelFormat *f, int i, int cseed) {
   return SDL_MapRGB(f, 255, 0, 255-i);
 }
 
-int FR_mandelbrot(double x, float y, int iter, float offx, float offy, float zoom) {
+int FR_mandelbrot(long double x, long double y, int iter, long double offx, long double offy, long double zoom) {
   int i;
   FR_Mandelbrot_Complex xy = { x, y };
 
@@ -102,11 +104,11 @@ int FR_mandelbrot(double x, float y, int iter, float offx, float offy, float zoo
   return i;
 }
 
-void FR_draw(SDL_Surface *ps, int iter, double offx, float offy, float zoom, int cseed) {
+void FR_draw(SDL_Surface *ps, int iter, long double offx, long double offy, long double zoom, int cseed) {
   int i, j;
 
   SDL_LockSurface(ps);
-  MT_log(LOG_DEBUG, "eval mandelbrot... (%F:%F:%d:%F)", offx, offy, iter, zoom);
+  MT_log(LOG_DEBUG, "eval mandelbrot... (%Lf:%Lf:%d:%Lf)", offx, offy, iter, zoom);
   for (i = 0; i < H; ++i) {
     for (j = 0; j < W; ++j)
       FR_put_pixel(ps, j, i, FR_colorify(ps->format, FR_mandelbrot(1.*j/W, 1.*i/H, iter, offx, offy, zoom), cseed));
@@ -115,7 +117,7 @@ void FR_draw(SDL_Surface *ps, int iter, double offx, float offy, float zoom, int
   SDL_UnlockSurface(ps);
 }
 
-void FR_zoom_area_draw(SDL_Surface *ps, int w, int h, double zoom) {
+void FR_zoom_area_draw(SDL_Surface *ps, int w, int h, long double zoom) {
   SDL_Surface *framebuffer = 0;
   SDL_Rect box;
   int mx, my;
@@ -126,16 +128,16 @@ void FR_zoom_area_draw(SDL_Surface *ps, int w, int h, double zoom) {
   box.x = mx-box.w/2;
   box.y = my-box.h/2;
 
-  if (box.x < 0.) {
+  if (box.x < 0.F) {
     box.w += box.x;
-    box.x = 0.;
+    box.x = 0.F;
   } else if (box.x >= (box.w-box.w)) {
     box.w -= (box.w-box.w);
   }
 
-  if (box.y < 0.) {
+  if (box.y < 0.F) {
     box.h += box.y;
-    box.y = 0.;
+    box.y = 0.F;
   } else if (box.y >= (box.h-box.h)) {
     box.h -= (box.h-box.h);
   }
@@ -159,9 +161,9 @@ int FR_main(SDL_Surface *ps) {
   int iterations;
   SDL_Event event;
   SDL_Surface *pmandel;
-  double offx, offy;
-  double mx, my;
-  double zoom;
+  long double offx, offy;
+  long double mx, my;
+  long double zoom;
   int zf;
   int cseed;
 
@@ -172,8 +174,8 @@ int FR_main(SDL_Surface *ps) {
   ran = true;
   showZoom = false;
   iterations = 100;
-  offx = -0.5f;
-  offy = 0.;
+  offx = -0.5F;
+  offy = 0.F;
   zoom = 1.;
   zf = 2;
   cseed = 0;
@@ -234,6 +236,11 @@ int FR_main(SDL_Surface *ps) {
           switch (event.key.keysym.sym) {
             case SDLK_i :
               iterations += 100;
+              FR_draw(pmandel, iterations, offx, offy, zoom, cseed);
+              break;
+
+            case SDLK_u :
+              iterations += 500;
               FR_draw(pmandel, iterations, offx, offy, zoom, cseed);
               break;
 

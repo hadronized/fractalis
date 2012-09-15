@@ -1,6 +1,6 @@
 CC= gcc
 CFLAGS= -W -Wall -g
-CLIBS= -lSDL
+CLIBS= -lSDL -lm
 INCLUDE= -I../include
 OBJ= main.o log.o mandelbrot.o
 LIBNAME= fractalis

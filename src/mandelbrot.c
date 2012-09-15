@@ -1,21 +1,21 @@
 #include <math.h>
 #include "mandelbrot.h"
 
-void FR_Mandelbrot_uv2mandelbrot(double *x, double *y) {
+void FR_Mandelbrot_uv2mandelbrot(long double *x, long double *y) {
   *x = (*x)*2 - 1.;
   *y = 1. - (*y)*2;
 }
 
 bool FR_Mandelbrot_Complex_div(FR_Mandelbrot_Complex *pp) {
-  double x = pp->r;
-  double y = pp->i;
+  long double x = pp->r;
+  long double y = pp->i;
 
   return (x*x + y*y) > 4;
 }
 
 void FR_Mandelbrot_next(FR_Mandelbrot_Complex *zn, FR_Mandelbrot_Complex const *c) {
-  double rn = zn->r;
-  double in = zn->i;
+  long double rn = zn->r;
+  long double in = zn->i;
 
   zn->r = rn*rn - in*in + c->r;
   zn->i = 2*rn*in + c->i;
