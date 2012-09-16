@@ -126,7 +126,7 @@ void FR_draw(SDL_Surface *ps, int iter, long double offx, long double offy, long
   int i, j;
 
   SDL_LockSurface(ps);
-  FR_log(LOG_DEBUG, "eval mandelbrot... (%22.18Lf:%22.18Lf:%d:%22.18Lf)", offx, offy, iter, zoom);
+  FR_log(LOG_DEBUG, "eval mandelbrot... (%22.18Lf:%22.18Lf:%d:%22.18Lf)", offx*R, offy, iter, zoom);
   for (i = 0; i < H; ++i) {
     for (j = 0; j < W; ++j)
       FR_put_pixel(ps, j, i, FR_colorify(ps->format, FR_mandelbrot(1.*j/W, 1.*i/H, iter, offx, offy, zoom), cseed));
