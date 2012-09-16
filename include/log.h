@@ -16,41 +16,30 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include <math.h>
-#include "mandelbrot.h"
+#ifndef LOG_H
+#define LOG_H
 
-void FR_Mandelbrot_uv2mandelbrot(long double *x, long double *y) {
-  *x = (*x)*2 - 1.;
-  *y = 1. - (*y)*2;
-}
+#include <stdio.h>
+#include <stdarg.h>
 
-bool FR_Mandelbrot_Complex_div(FR_Mandelbrot_Complex *pp) {
-  long double x = pp->r;
-  long double y = pp->i;
+/* Log flag:
+ * Bits (8):
+ *   xx000000 -> LOG_NONE 
+ *   xx000001 -> LOG_DEBUG
+ *   xx000010 -> LOG_WARNING
+ *   xx000100 -> LOG_INT_ERROR
+ *   xx001000 -> LOG_EXT_ERROR
+ *   xx001111 -> LOG_ALL
+ */
+#define LOG_NONE       0x00
+#define LOG_DEBUG      0x01
+#define LOG_WARNING    0x02
+#define LOG_INT_ERROR  0x04
+#define LOG_EXT_ERROR  0x08
+#define LOG_ALL        0x0F
 
-  return (x*x + y*y) > 4;
-}
+char fr_logflag;
 
-void FR_Mandelbrot_next(FR_Mandelbrot_Complex *zn, FR_Mandelbrot_Complex const *c) {
-  long double rn = zn->r;
-  long double in = zn->i;
+void FR_log(char logger, char const *log, ...);
 
-  zn->r = rn*rn - in*in + c->r;
-  zn->i = 2*rn*in + c->i;
-}
-
-int FR_Mandelbrot_eval(FR_Mandelbrot_Complex const *xy, int maxi) {
-  int iter;
-  FR_Mandelbrot_Complex z = { 0., 0. };
-
-  iter = 0;
-  while (iter <= maxi) {
-    if (FR_Mandelbrot_Complex_div(&z))
-      return iter;
-
-    FR_Mandelbrot_next(&z, xy);
-    ++iter;
-  }
-
-  return -1;
-}
+#endif /* guard */

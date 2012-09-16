@@ -1,7 +1,25 @@
-#include <SDL/SDL.h>
-#include <meta/common.h>
-#include "mandelbrot.h"
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    Fractalis, a mandelbrot fractal viewer 
+    Copyright (C) 2012  Dimitri 'skp' Sabadie <dimitri.sabadie@gmaile.com>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 #include <math.h>
+#include <SDL/SDL.h>
+#include "common.h"
+#include "mandelbrot.h"
 
 #define W 1280 
 #define H 800 
@@ -11,13 +29,13 @@
 SDL_Surface * FR_init(int argc, char **argv) {
   SDL_Surface *ps;
 
-  MT_log(LOG_DEBUG, "initializing");
-  mt_logflag = LOG_ALL;
+  FR_log(LOG_DEBUG, "initializing");
+  fr_logflag = LOG_ALL;
   SDL_Init(SDL_INIT_VIDEO);
   ps = SDL_SetVideoMode(W, H, 32, SDL_HWSURFACE | SDL_DOUBLEBUF | (F ? SDL_FULLSCREEN : 0));
   if (!ps)
-    MT_log(LOG_EXT_ERROR, "unable to open a window");
-  MT_log(LOG_DEBUG, "initialized");
+    FR_log(LOG_EXT_ERROR, "unable to open a window");
+  FR_log(LOG_DEBUG, "initialized");
 
   SDL_EnableKeyRepeat(200, 10);
 
@@ -25,7 +43,7 @@ SDL_Surface * FR_init(int argc, char **argv) {
 }
 
 void FR_quit() {
-  MT_log(LOG_DEBUG, "quitting...");
+  FR_log(LOG_DEBUG, "quitting...");
   SDL_Quit();
 }
 
@@ -65,7 +83,7 @@ void FR_put_pixel(SDL_Surface *ps, int x, int y, Uint32 pixel) {
       break;
 
     default :
-      MT_log(LOG_WARNING, "unknown format: %d bpp", bpp);
+      FR_log(LOG_WARNING, "unknown format: %d bpp", bpp);
   }
 }
 
@@ -108,12 +126,12 @@ void FR_draw(SDL_Surface *ps, int iter, long double offx, long double offy, long
   int i, j;
 
   SDL_LockSurface(ps);
-  MT_log(LOG_DEBUG, "eval mandelbrot... (%Lf:%Lf:%d:%Lf)", offx, offy, iter, zoom);
+  FR_log(LOG_DEBUG, "eval mandelbrot... (%22.18Lf:%22.18Lf:%d:%22.18Lf)", offx, offy, iter, zoom);
   for (i = 0; i < H; ++i) {
     for (j = 0; j < W; ++j)
       FR_put_pixel(ps, j, i, FR_colorify(ps->format, FR_mandelbrot(1.*j/W, 1.*i/H, iter, offx, offy, zoom), cseed));
   }
-  MT_log(LOG_DEBUG, "done!");
+  FR_log(LOG_DEBUG, "done!");
   SDL_UnlockSurface(ps);
 }
 
@@ -146,7 +164,7 @@ void FR_zoom_area_draw(SDL_Surface *ps, int w, int h, long double zoom) {
   framebuffer = SDL_CreateRGBSurface(SDL_HWSURFACE, box.w, box.h, 32, 0, 0, 0, 0);
   SDL_SetAlpha(framebuffer, SDL_SRCALPHA, 127);
   if (!framebuffer) {
-    MT_log(LOG_WARNING, "unable to create the zoom surface");
+    FR_log(LOG_WARNING, "unable to create the zoom surface");
     return;
   }
   SDL_FillRect(framebuffer, NULL, SDL_MapRGB(framebuffer->format, 60, 60, 60)); 
@@ -255,6 +273,8 @@ int FR_main(SDL_Surface *ps) {
 
             case SDLK_MINUS :
               --zf;
+              if (zf < 1)
+                zf = 1;
               break;
  
             default :;
@@ -271,6 +291,13 @@ int FR_main(SDL_Surface *ps) {
 
 int main(int argc, char **argv) {
   SDL_Surface *ps;
+
+  printf("\
+Fractalis, Copyright (C) 2012  Dimitri 'skp' Sabadie <dimitri.sabadie@gmaile.com>\n\
+This program comes with ABSOLUTELY NO WARRANTY.\n\
+This is free software, and you are welcome to redistribute it\n\
+under certain conditions.\n\n"
+  );
 
   ps = FR_init(argc, argv);
   FR_main(ps);

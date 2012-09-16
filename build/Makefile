@@ -11,8 +11,5 @@ all: $(OBJ)
 %.o: ../src/%.c
 	$(CC) -c $< -o $@ $(INCLUDE) $(CFLAGS)
 
-log.o: ../src/meta/log.c
-	$(CC) -c $< -o $@ $(INCLUDE) $(CFLAGS)
-
 clean:
 	@rm -rf *.o $(LIBNAME)
